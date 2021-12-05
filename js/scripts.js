@@ -49,11 +49,14 @@ class Player {
             velocity: 0
         }
     }
+    stop() {
+        this.playerInfo.velocity = 0;
+    }
     run() {
-
+        this.playerInfo.velocity = 0.03;
     }
     update() {
-        this.playerInfo.positionX += this.playerInfo.velocity;
+        this.playerInfo.positionX -= this.playerInfo.velocity;
         this.player.position.x = this.playerInfo.positionX;
     }
 }
@@ -88,6 +91,7 @@ function animate() {
 	requestAnimationFrame( animate );
     /* cube.rotation.y += 0.03; */
 	renderer.render( scene, camera );
+    player.update();
 }
 animate();
 
@@ -98,3 +102,12 @@ function onWindowResize() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
 }
+
+window.addEventListener('keydown', e => {
+    if (e.key === "ArrowLeft") {
+        player.run();
+    }
+    if (e.key === "ArrowDown") {
+        player.stop();
+    }
+});
