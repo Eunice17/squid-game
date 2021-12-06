@@ -10,18 +10,26 @@ const renderer = new THREE.WebGLRenderer();
 renderer.setSize( window.innerWidth, window.innerHeight );
 document.body.appendChild( renderer.domElement );
 
+const text = document.querySelector('.text-loading');
+const timeLimit = 10;
+
 const light = new THREE.AmbientLight( 0xffffff ); // soft white light
 scene.add( light );
 
 renderer.setClearColor(0xb7c3f1, 1);
 camera.position.z = 5;
 
+const delay =  async ms => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+
+}
+
 class Doll {
     constructor() {
         loader.load('../models/scene.gltf', ( gltf ) => {
+            scene.add(gltf.scene);
             gltf.scene.scale.set(.4, .4, .4);
             gltf.scene.position.set(0, -1, 0);
-            scene.add(gltf.scene);
             this.doll = gltf.scene;
         });  
     }
@@ -31,7 +39,16 @@ class Doll {
     }
     lookFrontWard() {
         // this.doll.rotation.y = 0;
-        gsap.to(this.doll.rotation, { y: 0, duration: .45 });
+        gsap.to(this.doll.rotation , { y: 0, duration: .45 });
+    }
+
+    async start() {
+        this.lookBackWard();
+        await delay((Math.random() * 1000) + 1000);
+        this.lookFrontWard();
+        await delay((Math.random() * 750) + 750 );
+        this.start();
+        
     }
 }
 
@@ -53,7 +70,7 @@ class Player {
         this.playerInfo.velocity = 0;
     }
     run() {
-        this.playerInfo.velocity = 0.03;
+        this.playerInfo.velocity = 0.1;
     }
     update() {
         this.playerInfo.positionX -= this.playerInfo.velocity;
@@ -66,6 +83,7 @@ const loader = new THREE.GLTFLoader();
 const doll = new Doll();
 const player = new  Player(); 
 
+
 const createCube = (size, positionX, roty = 0, color = 0XDCA2CD	 ) => {
     const geometry = new THREE.BoxGeometry(size.w, size.h, size.d);
     const material = new THREE.MeshBasicMaterial( { color: color } );
@@ -75,8 +93,27 @@ const createCube = (size, positionX, roty = 0, color = 0XDCA2CD	 ) => {
     scene.add( cube );
     return cube;
 };
+const startGame = () => {
+    let progresBar = createCube({ w: 5, h: 4.5, d: 1 }, 0);
+    progresBar.position.y = 5.5;
+    gsap.to(progresBar.scale, { x: 0, duration: timeLimit })
+    doll.start();
+}
 
-setTimeout(() => { doll.lookBackWard() }, 1000);
+const init = async () => {
+    await delay(600);
+    text.textContent = "Start play in 3"
+    await delay(600);
+    text.textContent = "Start play in 2"
+    await delay(600);
+    text.textContent = "Start play in 1"
+    await delay(600);
+    text.textContent = "Goo!!"
+    startGame();
+
+}
+init();
+
 
 function createTruck() {
     createCube({ w: startPosition * 2 + .2, h: 1.5, d: 1.5 }, 0, 0).position.z = -1.2;
@@ -89,9 +126,9 @@ createTruck();
 
 function animate() {
 	requestAnimationFrame( animate );
-    /* cube.rotation.y += 0.03; */
 	renderer.render( scene, camera );
     player.update();
+    
 }
 animate();
 
@@ -107,7 +144,9 @@ window.addEventListener('keydown', e => {
     if (e.key === "ArrowLeft") {
         player.run();
     }
-    if (e.key === "ArrowDown") {
+});
+window.addEventListener("keyup", e => {
+    if (e.key === "ArrowLeft") {
         player.stop();
     }
 });
