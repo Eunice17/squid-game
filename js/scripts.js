@@ -1,7 +1,8 @@
 //Global variables
 const startPosition = 3.5;
 const endPosition = -startPosition;
-
+let gameStatus = "loading";
+let isLookingBackward = true;
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -34,12 +35,12 @@ class Doll {
         });  
     }
     lookBackWard() {
-        // this.doll.rotation.y = -3.15;
         gsap.to(this.doll.rotation, { y: -3.15, duration: .45 });
+        setTimeout(() => isLookingBackward = false, 450)
     }
     lookFrontWard() {
-        // this.doll.rotation.y = 0;
         gsap.to(this.doll.rotation , { y: 0, duration: .45 });
+        setTimeout(() => isLookingBackward = true, 150)
     }
 
     async start() {
@@ -72,7 +73,18 @@ class Player {
     run() {
         this.playerInfo.velocity = 0.1;
     }
+    check() {
+        if (this.playerInfo.velocity > 0 && !isLookingBackward) {
+            gameStatus = "over";
+            text.textContent = "LOSER!"
+        }
+        if (this.playerInfo.positionX < endPosition  ) {
+            gameStatus = "over";
+            text.textContent = "WIN!";
+        }
+    }
     update() {
+        this.check();
         this.playerInfo.positionX -= this.playerInfo.velocity;
         this.player.position.x = this.playerInfo.positionX;
     }
@@ -94,20 +106,25 @@ const createCube = (size, positionX, roty = 0, color = 0XDCA2CD	 ) => {
     return cube;
 };
 const startGame = () => {
+    gameStatus =  "started";
     let progresBar = createCube({ w: 5, h: 4.5, d: 1 }, 0);
     progresBar.position.y = 5.5;
-    gsap.to(progresBar.scale, { x: 0, duration: timeLimit })
+    gsap.to(progresBar.scale, { x: 0, duration: timeLimit, ease: 'none' })
     doll.start();
+    setTimeout(() => {
+        if (gameStatus != "over") {
+            text.innerText = "You ran out of time!";
+            gameStatus = "over";
+        }
+    }, timeLimit * 1000);
 }
 
 const init = async () => {
-    await delay(600);
-    text.textContent = "Start play in 3"
-    await delay(600);
-    text.textContent = "Start play in 2"
-    await delay(600);
-    text.textContent = "Start play in 1"
-    await delay(600);
+
+    for ( i=1;  i <= 4; i++ ) {
+        await delay(600);
+        text.textContent = `Start play in ${4-i}`
+    }
     text.textContent = "Goo!!"
     startGame();
 
@@ -125,8 +142,9 @@ createTruck();
 
 
 function animate() {
+    if (gameStatus == "over") return
+    renderer.render( scene, camera );
 	requestAnimationFrame( animate );
-	renderer.render( scene, camera );
     player.update();
     
 }
@@ -141,9 +159,10 @@ function onWindowResize() {
 }
 
 window.addEventListener('keydown', e => {
-    if (e.key === "ArrowLeft") {
-        player.run();
-    }
+    if ( gameStatus !==  "started") return
+        if (e.key === "ArrowLeft") {
+            player.run();
+        }
 });
 window.addEventListener("keyup", e => {
     if (e.key === "ArrowLeft") {
